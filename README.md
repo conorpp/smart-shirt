@@ -34,6 +34,11 @@ cd src/
 make
 make flash
 ```
-
 Now it's running the code.
+
+### Adding more code
+
+Start with `src/main.c` and edit `src/Makefile` somewhere to support more files.  For driver code, just look at `nrf_sdk/examples` and copy code from there.  Most things are separated into `pca*` folders because of different dev board revisions.  Use `pca10040`.
+
+
 
