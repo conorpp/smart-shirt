@@ -36,6 +36,26 @@ make flash
 ```
 Now it's running the code.
 
+### See the output
+
+The USB has a UART bridge.  Use a terminal emulator or other serial reader to see output.
+
+E.g.:
+
+```bash
+$ picocom -b115200 /dev/ttyACMO
+
+accel:
+    x:5540 y:2684 z:-15708
+gyro:
+    x:193 y:19 z:-73
+magno:
+    x:-192 y:-124 z:-238
+temperature:
+    t:144
+…
+```
+
 ### Adding more code
 
 Start with `src/main.c` and edit `src/Makefile` somewhere to support more files.  For driver code, just look at `nrf_sdk/examples` and copy code from there.  Most things are separated into `pca*` folders because of different dev board revisions.  Use `pca10040`.
