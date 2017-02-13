@@ -36,3 +36,6 @@
 *.bin
 *.map
 *.out
+
+# vim
+*.swp

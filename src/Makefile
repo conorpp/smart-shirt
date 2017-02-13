@@ -42,6 +42,13 @@ C_SOURCE_FILES += \
 $(abspath $(SDK_ROOT)/components/toolchain/system_nrf52.c) \
 $(abspath main.c) \
 $(abspath $(SDK_ROOT)/components/drivers_nrf/delay/nrf_delay.c) \
+$(abspath $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c) \
+$(abspath $(SDK_ROOT)/components/libraries/uart/retarget.c) \
+$(abspath $(wildcard $(SDK_ROOT)/components/libraries/util/*.c)) \
+$(abspath $(wildcard $(SDK_ROOT)/components/libraries/fifo/*.c)) \
+$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/common/*.c)) \
+$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/twi_master/*.c)) \
+$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/uart/*.c))
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf52.s)
@@ -50,11 +57,21 @@ ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_n
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain)
 INC_PATHS += -I$(abspath .)
+INC_PATHS += -I$(abspath ./config)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/examples/bsp)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/device)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/delay)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/CMSIS/Include)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/hal)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/uart/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/util/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fifo/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/uart/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/common/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/config/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/twi_master/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/libraries/fifo/)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
