@@ -2,7 +2,7 @@ PROJECT_NAME := wearable_pca10040
 
 
 # Change these if needed
-GNU_INSTALL_ROOT := /home/pp/gcc-arm-none-eabi-5_4-2016q3
+GNU_INSTALL_ROOT := /Users/UreyP3/local/gcc-arm-none-eabi-5_4-2016q3
 GNU_VERSION := 5.4.1
 GNU_PREFIX := arm-none-eabi
 SDK_ROOT=../nrf_sdk
@@ -40,7 +40,7 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 #source common to all targets
 C_SOURCE_FILES += \
 $(abspath $(SDK_ROOT)/components/toolchain/system_nrf52.c) \
-$(abspath main.c) \
+$(abspath main.c) $(abspath ble.c) \
 $(abspath $(SDK_ROOT)/components/drivers_nrf/delay/nrf_delay.c) \
 $(abspath $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c) \
 $(abspath $(SDK_ROOT)/components/libraries/uart/retarget.c) \
@@ -54,24 +54,44 @@ $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/uart/*.c))
 ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf52.s)
 
 #includes common to all targets
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/gcc)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain)
 INC_PATHS += -I$(abspath .)
 INC_PATHS += -I$(abspath ./config)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/examples/bsp)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/device)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/config)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/timer)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fstorage/config)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/delay)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/softdevice/s132/headers/nrf52)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/util)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/ble/device_manager)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/ble/common)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/sensorsim)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/pstorage)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/device)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/button)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fstorage)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/experimental_section_vars)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/softdevice/s132/headers)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/gpiote)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/external/segger_rtt)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/CMSIS/Include)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/hal)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain/gcc)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/toolchain)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/common)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/ble/ble_advertising)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/trace)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/softdevice/common/softdevice_handler)
+
+INC_PATHS += -I$(abspath $(SDK_ROOT)/examples/bsp)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/uart/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/util/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fifo/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/uart/)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/common/)
-INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/config/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/twi_master/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/libraries/fifo/)
+
+
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -99,6 +119,8 @@ CFLAGS += -DNRF52_PAN_63
 CFLAGS += -DBOARD_PCA10040
 CFLAGS += -DNRF52
 CFLAGS += -DBSP_DEFINES_ONLY
+CFLAGS += -DS132
+CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
 CFLAGS += -Wall -Werror -O3 -g3

@@ -21,12 +21,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "app.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 #include "boards.h"
 #include "app_uart.h"
 #include "app_error.h"
 #include "nrf_drv_twi.h"
+#include "ble_advertising.h"
 
 const uint8_t leds_list[LEDS_NUMBER] = LEDS_LIST;
 
@@ -225,6 +227,29 @@ int main(void)
     // Configure LED-pins as outputs.
     LEDS_CONFIGURE(LEDS_MASK);
     init_imu();
+
+    // ble start up
+    {
+        uint32_t err_code;
+        bool erase_bonds;
+
+        // Initialize.
+        timers_init();
+        buttons_leds_init(&erase_bonds);
+        ble_stack_init();
+        device_manager_init(erase_bonds);
+        gap_params_init();
+        advertising_init();
+        services_init();
+        conn_params_init();
+
+        // Start execution.
+        application_timers_start();
+        err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
+        APP_ERROR_CHECK(err_code);
+    }
+
+
 
     printf("smart shirt\r\n");
 
