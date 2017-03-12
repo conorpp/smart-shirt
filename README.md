@@ -16,6 +16,7 @@ First install the tools.  These are pretty basic and are supported on most syste
 
 * [GNU ARM Embedded Toolchain](https://launchpad.net/gcc-arm-embedded/+download)
 * [nRFx Toolset](http://www.nordicsemi.com/eng/Products/Bluetooth-low-energy/nRF52832) (nrfjprog)
+* [JLink tool](https://www.segger.com/downloads/jlink)
 
 Normally you would download the Nordic SDK too but this is include in git repo.
 
