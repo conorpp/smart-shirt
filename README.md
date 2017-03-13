@@ -33,6 +33,7 @@ Plug in the NRF52 PCA10040 board and run:
 ```bash
 cd src/
 make
+make flash_softdevice  # only need to do this once per NRF52
 make flash
 ```
 Now it's running the code.
