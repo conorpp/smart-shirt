@@ -209,10 +209,28 @@ void init_imu()
     APP_ERROR_CHECK(err_code);
 }
 
+void init_ble()
+{
+    uint32_t err_code;
+    bool erase_bonds;
 
-/**
- * @brief Function for application main entry.
- */
+    // Initialize.
+    timers_init();
+    buttons_leds_init(&erase_bonds);
+    ble_stack_init();
+    device_manager_init(erase_bonds);
+    gap_params_init();
+    advertising_init();
+    services_init();
+    conn_params_init();
+
+    // Start execution.
+    application_timers_start();
+    err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
+    APP_ERROR_CHECK(err_code);
+}
+
+
 int main(void)
 {
 
@@ -229,25 +247,7 @@ int main(void)
     init_imu();
 
     // ble start up
-    {
-        uint32_t err_code;
-        bool erase_bonds;
-
-        // Initialize.
-        timers_init();
-        buttons_leds_init(&erase_bonds);
-        ble_stack_init();
-        device_manager_init(erase_bonds);
-        gap_params_init();
-        advertising_init();
-        services_init();
-        conn_params_init();
-
-        // Start execution.
-        application_timers_start();
-        err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-        APP_ERROR_CHECK(err_code);
-    }
+    init_ble();
 
 
 
@@ -298,4 +298,3 @@ int main(void)
 }
 
 
-/** @} */

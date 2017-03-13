@@ -222,6 +222,13 @@ void services_init(void)
     err_code = ble_yy_service_init(&yys_init, &yy_init);
     APP_ERROR_CHECK(err_code);
     */
+    // conor
+    
+    ble_uuid_t sens_uuid;
+
+    BLE_UUID_BLE_ASSIGN(sens_uuid, 0xcafe);
+    uint16_t servh;
+    sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &sens_uuid,  &servh);
 }
 
 
@@ -580,46 +587,40 @@ void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
-void timers_init(void);
-void buttons_leds_init(bool * p_erase_bonds);
-void ble_stack_init(void);
-void device_manager_init(bool erase_bonds);
-void gap_params_init(void);
-void advertising_init(void);
-void services_init(void);
-void conn_params_init(void);
-void application_timers_start(void);
-void power_manage(void);
+/*void timers_init(void);*/
+/*void buttons_leds_init(bool * p_erase_bonds);*/
+/*void ble_stack_init(void);*/
+/*void device_manager_init(bool erase_bonds);*/
+/*void gap_params_init(void);*/
+/*void advertising_init(void);*/
+/*void services_init(void);*/
+/*void conn_params_init(void);*/
+/*void application_timers_start(void);*/
+/*void power_manage(void);*/
 
-/**@brief Function for application main entry.
- */
-int main_old(void)
-{
-    uint32_t err_code;
-    bool erase_bonds;
+/*int main_old(void)*/
+/*{*/
+    /*uint32_t err_code;*/
+    /*bool erase_bonds;*/
 
-    // Initialize.
-    timers_init();
-    buttons_leds_init(&erase_bonds);
-    ble_stack_init();
-    device_manager_init(erase_bonds);
-    gap_params_init();
-    advertising_init();
-    services_init();
-    conn_params_init();
+    /*// Initialize.*/
+    /*timers_init();*/
+    /*buttons_leds_init(&erase_bonds);*/
+    /*ble_stack_init();*/
+    /*device_manager_init(erase_bonds);*/
+    /*gap_params_init();*/
+    /*advertising_init();*/
+    /*services_init();*/
+    /*conn_params_init();*/
 
-    // Start execution.
-    application_timers_start();
-    err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(err_code);
+    /*// Start execution.*/
+    /*application_timers_start();*/
+    /*err_code = ble_advertising_start(BLE_ADV_MODE_FAST);*/
+    /*APP_ERROR_CHECK(err_code);*/
 
-    // Enter main loop.
-    for (;;)
-    {
-        power_manage();
-    }
-}
-
-/**
- * @}
- */
+    /*// Enter main loop.*/
+    /*for (;;)*/
+    /*{*/
+        /*power_manage();*/
+    /*}*/
+/*}*/
