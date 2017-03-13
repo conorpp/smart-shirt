@@ -10,6 +10,7 @@ void advertising_init(void);
 void services_init(void);
 void conn_params_init(void);
 void application_timers_start(void);
+void power_manage(void);
 
 #endif
 

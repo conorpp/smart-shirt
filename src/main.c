@@ -261,6 +261,7 @@ int main(void)
             LEDS_INVERT(1 << leds_list[i]);
             nrf_delay_ms(20);
         }
+        power_manage();
         
         // burst read accel, gyro, temperature
         reg = 0x3B;          

@@ -48,7 +48,26 @@ $(abspath $(wildcard $(SDK_ROOT)/components/libraries/util/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/libraries/fifo/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/common/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/twi_master/*.c)) \
-$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/uart/*.c))
+$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/uart/*.c)) \
+\
+$(abspath $(SDK_ROOT)/components/libraries/button/app_button.c) \
+$(abspath $(SDK_ROOT)/components/libraries/timer/app_timer.c) \
+$(abspath $(SDK_ROOT)/components/libraries/trace/app_trace.c) \
+$(abspath $(SDK_ROOT)/components/libraries/fstorage/fstorage.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/RTT_Syscalls_GCC.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c) \
+$(abspath $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c) \
+$(abspath $(SDK_ROOT)/components/drivers_nrf/gpiote/nrf_drv_gpiote.c) \
+$(abspath $(SDK_ROOT)/components/drivers_nrf/pstorage/pstorage.c) \
+$(abspath $(SDK_ROOT)/components/ble/common/ble_advdata.c) \
+$(abspath $(SDK_ROOT)/components/ble/ble_advertising/ble_advertising.c) \
+$(abspath $(SDK_ROOT)/components/ble/common/ble_conn_params.c) \
+$(abspath $(SDK_ROOT)/components/ble/common/ble_srv_common.c) \
+$(abspath $(SDK_ROOT)/components/ble/device_manager/device_manager_peripheral.c) \
+$(abspath $(SDK_ROOT)/examples/bsp/bsp.c) \
+$(abspath $(SDK_ROOT)/examples/bsp/bsp_btn_ble.c) \
+$(abspath $(SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice_handler.c) 
+
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  = $(abspath $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf52.s)
@@ -118,7 +137,7 @@ CFLAGS += -DNRF52_PAN_62
 CFLAGS += -DNRF52_PAN_63
 CFLAGS += -DBOARD_PCA10040
 CFLAGS += -DNRF52
-CFLAGS += -DBSP_DEFINES_ONLY
+#CFLAGS += -DBSP_DEFINES_ONLY
 CFLAGS += -DS132
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m4
@@ -243,7 +262,11 @@ cleanobj:
 	$(RM) $(BUILD_DIRECTORIES)/*.o
 flash: nrf52832_xxaa
 	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/$<.hex
-	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$<.hex -f nrf52  --chiperase
+	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$<.hex -f nrf52  --sectorerase
 	nrfjprog --reset -f nrf52
 
 ## Flash softdevice
+flash_softdevice:
+	@echo Flashing: s132_nrf52_2.0.0_softdevice.hex
+	nrfjprog --program $(SDK_ROOT)/components/softdevice/s132/s132_nrf52_2.0.1_softdevice.hex -f nrf52 --chiperase
+	nrfjprog --reset -f nrf52

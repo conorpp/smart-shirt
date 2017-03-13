@@ -56,8 +56,8 @@
 #define CENTRAL_LINK_COUNT               0                                          /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
 #define PERIPHERAL_LINK_COUNT            1                                          /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define DEVICE_NAME                      "Nordic_Template"                          /**< Name of device. Will be included in the advertising data. */
-#define MANUFACTURER_NAME                "NordicSemiconductor"                      /**< Manufacturer. Will be passed to Device Information Service. */
+#define DEVICE_NAME                      "Smart Shirt"                          /**< Name of device. Will be included in the advertising data. */
+#define MANUFACTURER_NAME                "Conor Industries"                      /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL                 300                                        /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS       180                                        /**< The advertising timeout in units of seconds. */
 
@@ -574,7 +574,7 @@ void buttons_leds_init(bool * p_erase_bonds)
 
 /**@brief Function for the Power manager.
  */
-static void power_manage(void)
+void power_manage(void)
 {
     uint32_t err_code = sd_app_evt_wait();
     APP_ERROR_CHECK(err_code);
@@ -589,6 +589,7 @@ void advertising_init(void);
 void services_init(void);
 void conn_params_init(void);
 void application_timers_start(void);
+void power_manage(void);
 
 /**@brief Function for application main entry.
  */
