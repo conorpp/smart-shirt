@@ -62,5 +62,18 @@ temperature:
 
 Start with `src/main.c` and edit `src/Makefile` somewhere to support more files.  For driver code, just look at `nrf_sdk/examples` and copy code from there.  Most things are separated into `pca*` folders because of different dev board revisions.  Use `pca10040`.
 
+# Installing Bluetooth Windows Dependencies
 
+### Prereqs
 
+* Install Nodejs
+* Install Visual Studio Community *2015*
+* Need a USB Bluetooth dongle to bypass windows b.s.
+
+### Steps
+
+* Follow directions [here](https://github.com/sandeepmistry/node-bluetooth-hci-socket#windows)
+
+### Notes
+
+The `npm` installation of `bluetooth-hci-socket` didn't work for me at first.  See [this fix](http://stackoverflow.com/questions/38149603/npm-install-fails-with-error-c2373-with-vs2015-update-3/38149604#38149604) if it doesn't work.  Try the accepted answer and try just running `npm install npm -g` all in administer cmd lines.
