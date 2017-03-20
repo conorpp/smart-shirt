@@ -29,6 +29,8 @@
 #include "app_error.h"
 #include "nrf_drv_twi.h"
 #include "ble_advertising.h"
+#include "app_timer.h"
+#include "nrf_drv_clock.h"
 
 const uint8_t leds_list[LEDS_NUMBER] = LEDS_LIST;
 
@@ -39,6 +41,8 @@ static volatile bool m_xfer_done = true;
 static volatile bool m_set_mode_done = false;
 /* TWI instance. */
 static const nrf_drv_twi_t m_twi_mpu9250 = NRF_DRV_TWI_INSTANCE(0);
+
+static uint32_t _MS_ = 0;
 
 // I2C pins
 #define SCL_PIN 31
@@ -230,16 +234,41 @@ void init_ble()
     APP_ERROR_CHECK(err_code);
 }
 
+static void timer_timeout_handler(void * p_context)
+{
+    _MS_ = _MS_ + 1;
+    /*printf("A");*/
+}
+
+void init_timer()
+{
+#define PRESCALER 0
+    ret_code_t err_code;
+    APP_TIMER_INIT(PRESCALER, 3, false);
+    APP_TIMER_DEF(m_our_char_timer_id);
+    err_code = app_timer_create(&m_our_char_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_start(m_our_char_timer_id, APP_TIMER_TICKS(1, PRESCALER), NULL);
+    APP_ERROR_CHECK(err_code);
+}
+
 
 int main(void)
 {
 
     ret_code_t err_code;
     uint8_t reg; // ACCEL_XOUT_L;
-    uint8_t data[21];
+    uint8_t data[SENSOR_DATA_LEN];
     struct IMU imu;
+    uint8_t sens_id = 0x55;
+
+    /*nrf_drv_clock_init();*/
+    /*[>APP_ERROR_CHECK(err_code);<]*/
+    /*nrf_drv_clock_lfclk_request(NULL);*/
 
     uart_config();
+    init_timer();
     // twi == i2c
     twi_init();
     // Configure LED-pins as outputs.
@@ -259,7 +288,7 @@ int main(void)
         for (int i = 0; i < LEDS_NUMBER; i++)
         {
             LEDS_INVERT(1 << leds_list[i]);
-            nrf_delay_ms(20);
+            nrf_delay_ms(1);
         }
         power_manage();
         
@@ -280,19 +309,31 @@ int main(void)
             APP_ERROR_CHECK(err_code);
         }
 
+        // add timestamp
+        memmove(data+14+7, &_MS_, 4);
+
+        // add sensor ID
+        memmove(data+14+7+4, &sens_id, 1);
+
+        memmove(sensor_output_buf, data, SENSOR_DATA_LEN);
+
+        sensor_update();
+
         // put data neatly in IMU struct
-        parse_data(&imu,data);
+        /*parse_data(&imu,data);*/
 
         // output
-        printf("accel:\r\n");
-        printf("    x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);
-        printf("gyro:\r\n");
-        printf("    x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);
-        printf("magno:\r\n");
-        printf("    x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);
-        printf("temperature:\r\n");
-        printf("    t:%d\r\n", imu.temperature);
-        printf("\r\n");
+        /*printf("accel:\r\n");*/
+        /*printf("    x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);*/
+        /*printf("gyro:\r\n");*/
+        /*printf("    x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);*/
+        /*printf("magno:\r\n");*/
+        /*printf("    x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);*/
+        /*printf("temperature:\r\n");*/
+        /*printf("    t:%d\r\n", imu.temperature);*/
+        /*printf("time:\r\n");*/
+        /*printf("    t:%ld\r\n", _MS_);*/
+        /*printf("\r\n");*/
 
     }
 }

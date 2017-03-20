@@ -33,6 +33,7 @@
 #include "app_error.h"
 #include "ble.h"
 #include "ble_hci.h"
+#include "ble_err.h"
 #include "ble_srv_common.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
@@ -50,6 +51,9 @@
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
+#include "nrf_delay.h"
+
+#include "app.h"
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT  1                                          /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
@@ -64,8 +68,8 @@
 #define APP_TIMER_PRESCALER              0                                          /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE          4                                          /**< Size of timer operation queues. */
 
-#define MIN_CONN_INTERVAL                MSEC_TO_UNITS(100, UNIT_1_25_MS)           /**< Minimum acceptable connection interval (0.1 seconds). */
-#define MAX_CONN_INTERVAL                MSEC_TO_UNITS(200, UNIT_1_25_MS)           /**< Maximum acceptable connection interval (0.2 second). */
+#define MIN_CONN_INTERVAL                MSEC_TO_UNITS(10, UNIT_1_25_MS)           /**< Minimum acceptable connection interval (0.1 seconds). */
+#define MAX_CONN_INTERVAL                MSEC_TO_UNITS(20, UNIT_1_25_MS)           /**< Maximum acceptable connection interval (0.2 second). */
 #define SLAVE_LATENCY                    0                                          /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                 MSEC_TO_UNITS(4000, UNIT_10_MS)            /**< Connection supervisory timeout (4 seconds). */
 
@@ -88,10 +92,8 @@ static dm_application_instance_t         m_app_handle;                          
 
 static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;   /**< Handle of the current connection. */
 
-/* YOUR_JOB: Declare all services structure your application is using
-static ble_xx_service_t                     m_xxs;
-static ble_yy_service_t                     m_yys;
-*/
+// conor
+static ble_sens_t m_sens_serv;
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}}; /**< Universally unique service identifiers. */
@@ -122,7 +124,7 @@ void timers_init(void)
 {
 
     // Initialize timer module.
-    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
+    /*APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);*/
 
     // Create timers.
 
@@ -195,40 +197,100 @@ static void on_yys_evt(ble_yy_service_t     * p_yy_service,
     }
 }*/
 
+//conor
+static void our_service_init(ble_sens_t * sens)
+{
+    uint32_t   err_code;
+    ble_uuid_t        service_uuid;
+    unsigned char base_uuid[] = BLE_UUID_OUR_BASE_UUID;
+    service_uuid.uuid = BLE_UUID_OUR_SERVICE;
+    err_code = sd_ble_uuid_vs_add((ble_uuid128_t*)&base_uuid, &service_uuid.type);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
+            &service_uuid,
+            &sens->service_handle);
+    APP_ERROR_CHECK(err_code);
+
+    sens->conn_handle = BLE_CONN_HANDLE_INVALID;
+}
+
+// main application will write to this regularly
+uint8_t sensor_output_buf[SENSOR_DATA_LEN];
+
+//conor
+static void our_characteristic_init(ble_sens_t * sens)
+{
+
+    uint32_t            err_code;
+    ble_uuid_t          char_uuid;
+    unsigned char base_uuid[] = BLE_UUID_OUR_BASE_UUID;
+    char_uuid.uuid      = BLE_UUID_OUR_CHAR;
+    err_code = sd_ble_uuid_vs_add((ble_uuid128_t*)&base_uuid, &char_uuid.type);
+    APP_ERROR_CHECK(err_code);
+
+    // r/w properties
+    ble_gatts_char_md_t char_md;
+
+    // descriptor metadata
+    ble_gatts_attr_md_t cccd_md;
+
+    // attribute metadata
+    ble_gatts_attr_md_t attr_md;
+
+    // the value attribute
+    ble_gatts_attr_t    attr_char_value;
+
+    memset(&char_md, 0, sizeof(char_md));
+    memset(&cccd_md, 0, sizeof(cccd_md));
+    memset(&attr_md, 0, sizeof(attr_md));
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    // store metadata on softdevice stack
+    attr_md.vloc        = BLE_GATTS_VLOC_STACK;
+    // enable variable lengths
+    attr_md.vlen        = 1;
+
+    // allow read/write
+    char_md.char_props.read = 1;
+    char_md.char_props.write = 1;
+
+    attr_char_value.p_uuid      = &char_uuid;
+    attr_char_value.p_attr_md   = &attr_md;
+
+    attr_char_value.max_len     = SENSOR_DATA_LEN;
+    attr_char_value.init_len    = SENSOR_DATA_LEN;
+
+    attr_char_value.p_value = sensor_output_buf;
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+    cccd_md.vloc                = BLE_GATTS_VLOC_STACK;
+    char_md.p_cccd_md           = &cccd_md;
+    char_md.char_props.notify   = 1;
+
+    err_code = sd_ble_gatts_characteristic_add(sens->service_handle,
+                                    &char_md,
+                                    &attr_char_value,
+                                    &sens->char_handle);
+    APP_ERROR_CHECK(err_code);
+}
+
+//conor
 /**@brief Function for initializing services that will be used by the application.
  */
 void services_init(void)
 {
-    /* YOUR_JOB: Add code to initialize the services used by the application.
-    uint32_t                           err_code;
-    ble_xxs_init_t                     xxs_init;
-    ble_yys_init_t                     yys_init;
 
-    // Initialize XXX Service.
-    memset(&xxs_init, 0, sizeof(xxs_init));
+    our_service_init(&m_sens_serv);
+    our_characteristic_init(&m_sens_serv);
 
-    xxs_init.evt_handler                = NULL;
-    xxs_init.is_xxx_notify_supported    = true;
-    xxs_init.ble_xx_initial_value.level = 100; 
-    
-    err_code = ble_bas_init(&m_xxs, &xxs_init);
-    APP_ERROR_CHECK(err_code);
-
-    // Initialize YYY Service.
-    memset(&yys_init, 0, sizeof(yys_init));
-    yys_init.evt_handler                  = on_yys_evt;
-    yys_init.ble_yy_initial_value.counter = 0;
-
-    err_code = ble_yy_service_init(&yys_init, &yy_init);
-    APP_ERROR_CHECK(err_code);
-    */
-    // conor
-    
-    ble_uuid_t sens_uuid;
-
-    BLE_UUID_BLE_ASSIGN(sens_uuid, 0xcafe);
-    uint16_t servh;
-    sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &sens_uuid,  &servh);
+    /*BLE_UUID_BLE_ASSIGN(sens_uuid, 0xcafe);*/
+    /*uint16_t servh;*/
+    /*sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &sens_uuid,  &servh);*/
 }
 
 
@@ -369,6 +431,82 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     }
 }
 
+volatile int tx_done_flag = 0;
+
+// conor
+static void ble_sens_on_ble_evt(ble_sens_t * sens, ble_evt_t * ble_evt)
+{
+    switch (ble_evt->header.evt_id)
+    {
+        case BLE_GAP_EVT_CONNECTED:
+            sens->conn_handle = ble_evt->evt.gap_evt.conn_handle;
+            break;
+        case BLE_GAP_EVT_DISCONNECTED:
+            sens->conn_handle = BLE_CONN_HANDLE_INVALID;
+            break;
+        case BLE_EVT_TX_COMPLETE:
+            tx_done_flag = 1;
+            break;
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+void sensor_update()
+{
+    ble_gatts_hvx_params_t hvx_params;
+    ble_sens_t * sens = &m_sens_serv;
+
+    if (sens->conn_handle != BLE_CONN_HANDLE_INVALID)
+    {
+        // split into 20 byte chunks because that is max packet length
+        int i;
+        for (i = 0; i < SENSOR_DATA_LEN; i += 20)
+        {
+            uint16_t len = SENSOR_DATA_LEN - i;
+            if (len > 20) len = 20;
+
+            tx_done_flag = 0;
+            memset(&hvx_params, 0, sizeof(hvx_params));
+
+            hvx_params.handle = sens->char_handle.value_handle;
+            hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
+            hvx_params.offset = 0;
+            hvx_params.p_len  = &len;
+            hvx_params.p_data = sensor_output_buf + i;
+
+            /*int err;*/
+            /*do*/
+            /*{*/
+                /*if (err != NRF_SUCCESS)*/
+                /*{*/
+                    /*APP_ERROR_HANDLER(err);*/
+                /*}*/
+            /*printf("len:%d\r\n",len);*/
+            while (1)
+            {
+                sd_ble_gatts_hvx(sens->conn_handle, &hvx_params);
+                /*if (err == 0x3004  //  supposed to be BLE_ERROR_NO_TX_BUFFERS*/
+                    /*)*/
+                /*{*/
+                    /*printf("returned caught error\r\n");*/
+                    /*while (tx_done_flag == 0)*/
+                    /*{*/
+                    /*}*/
+                /*}*/
+                /*else*/
+                {
+                    /*if (err != NRF_SUCCESS) printf("erro, app returned 0x%02x\r\n", err);*/
+                    /*APP_ERROR_CHECK(err);*/
+                    break;
+                }
+
+            }
+        }
+    }
+}
+
 
 /**@brief Function for dispatching a BLE stack event to all modules with a BLE stack event handler.
  *
@@ -384,10 +522,9 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     bsp_btn_ble_on_ble_evt(p_ble_evt);
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
-    /*YOUR_JOB add calls to _on_ble_evt functions from each service your application is using
-    ble_xxs_on_ble_evt(&m_xxs, p_ble_evt);
-    ble_yys_on_ble_evt(&m_yys, p_ble_evt);
-    */
+
+    // conor
+    ble_sens_on_ble_evt(&m_sens_serv, p_ble_evt);
 }
 
 

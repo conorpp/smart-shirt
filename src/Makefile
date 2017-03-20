@@ -2,7 +2,7 @@ PROJECT_NAME := wearable_pca10040
 
 
 # Change these if needed
-GNU_INSTALL_ROOT := /Users/UreyP3/local/gcc-arm-none-eabi-5_4-2016q3
+GNU_INSTALL_ROOT := C:\Program Files (x86)\GNU Tools ARM Embedded\5.4 2016q3
 GNU_VERSION := 5.4.1
 GNU_PREFIX := arm-none-eabi
 SDK_ROOT=../nrf_sdk
@@ -49,6 +49,7 @@ $(abspath $(wildcard $(SDK_ROOT)/components/libraries/fifo/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/common/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/twi_master/*.c)) \
 $(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/uart/*.c)) \
+$(abspath $(wildcard $(SDK_ROOT)/components/drivers_nrf/clock/*.c)) \
 \
 $(abspath $(SDK_ROOT)/components/libraries/button/app_button.c) \
 $(abspath $(SDK_ROOT)/components/libraries/timer/app_timer.c) \
@@ -106,6 +107,7 @@ INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/uart/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/util/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/libraries/fifo/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/uart/)
+INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/clock/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/twi_master/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/)
 INC_PATHS += -I$(abspath $(SDK_ROOT)/libraries/fifo/)
@@ -121,6 +123,7 @@ BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LIS
 
 #flags common to all targets
 CFLAGS  = -DNRF52_PAN_12
+CFLAGS  = -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF52_PAN_15
 CFLAGS += -DNRF52_PAN_58
 CFLAGS += -DNRF52_PAN_20
@@ -179,7 +182,7 @@ ASMFLAGS += -DNRF52
 ASMFLAGS += -DBSP_DEFINES_ONLY
 
 #default target - first one defined
-default: clean nrf52832_xxaa
+default: nrf52832_xxaa
 
 #building all targets
 all: clean

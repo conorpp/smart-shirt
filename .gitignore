@@ -39,3 +39,5 @@
 
 # vim
 *.swp
+
+node_modules
