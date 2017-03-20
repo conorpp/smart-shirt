@@ -74,6 +74,15 @@ Start with `src/main.c` and edit `src/Makefile` somewhere to support more files.
 
 * Follow directions [here](https://github.com/sandeepmistry/node-bluetooth-hci-socket#windows)
 
+Then run 
+```bash
+cd scripts
+npm i    # only do this once
+node bluetooth.js
+```
+
+It will connect to the sensor MCU.  Restart sensor MCU if it hangs.  
+
 ### Notes
 
 The `npm` installation of `bluetooth-hci-socket` didn't work for me at first.  See [this fix](http://stackoverflow.com/questions/38149603/npm-install-fails-with-error-c2373-with-vs2015-update-3/38149604#38149604) if it doesn't work.  Try the accepted answer and try just running `npm install npm -g` all in administer cmd lines.
