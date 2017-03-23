@@ -54,7 +54,7 @@ static uint32_t _MS_ = 0;
 
 
 // IMU device addresses
-#define MPU9250         (0x68)
+#define MPU9250         (0x69)
 #define AK8963          (0x0C)
 
 
@@ -144,7 +144,7 @@ void parse_data(struct IMU * imu, uint8_t * data)
     imu->accel.x = b2int16(data + 0);
     imu->accel.y = b2int16(data + 2);
     imu->accel.z = b2int16(data + 4);
-    
+
     imu->temperature = b2int16(data + 6);
 
     imu->gyro.x = b2int16(data + 8);
@@ -185,32 +185,71 @@ void read_data(uint8_t device, uint8_t addr, uint8_t * data, int num)
     APP_ERROR_CHECK(err_code);
 }
 
+void activate_sensor(int id)
+{
+    ret_code_t err_code;
+    uint8_t mode_data[] = {0x37, 0x22};
+
+    nrf_gpio_range_cfg_output(22,25);
+    nrf_gpio_pin_set(id);
+
+    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
+    APP_ERROR_CHECK(err_code);
+}
+
+void deactivate_sensor(int id)
+{
+    ret_code_t err_code;
+    uint8_t mode_data[] = {0x37, 0x20};
+
+    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_gpio_range_cfg_output(22,25);
+    nrf_gpio_pin_clear(id);
+}
+
 void init_imu()
 {
     ret_code_t err_code;
-    // enable I2C pass through to access magnetometer
-    uint8_t mode_data[] = {0x38, 0x01};
-    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
-    APP_ERROR_CHECK(err_code);
+    nrf_gpio_range_cfg_output(22,25);
+    nrf_gpio_pin_clear(22);
+    nrf_gpio_pin_clear(23);
+    nrf_gpio_pin_clear(24);
+    nrf_gpio_pin_clear(25);
+    int i;
 
-    mode_data[0] = 0x37;
-    mode_data[1] = 0x22;
-    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
-    APP_ERROR_CHECK(err_code);
+    for (i = 22; i < 26; i++)
+    {
+
+        activate_sensor(i);
+
+        // enable I2C pass through to access magnetometer
+        uint8_t mode_data[] = {0x38, 0x01};
+        err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
+        APP_ERROR_CHECK(err_code);
+
+        mode_data[0] = 0x37;
+        mode_data[1] = 0x22;
+        err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, mode_data, 2, false);
+        APP_ERROR_CHECK(err_code);
 
 
-    // reset magnetometer
-    mode_data[0] = 0x0b;
-    mode_data[1] = 0x01;
-    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, mode_data, 2, false);
-    APP_ERROR_CHECK(err_code);
+        // reset magnetometer
+        mode_data[0] = 0x0b;
+        mode_data[1] = 0x01;
+        err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, mode_data, 2, false);
+        APP_ERROR_CHECK(err_code);
 
 
-    // put magnometer in continuous mode
-    mode_data[0] = 0x0a;
-    mode_data[1] = 0x12;
-    err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, mode_data, 2, false);
-    APP_ERROR_CHECK(err_code);
+        // put magnometer in continuous mode
+        mode_data[0] = 0x0a;
+        mode_data[1] = 0x12;
+        err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, mode_data, 2, false);
+        APP_ERROR_CHECK(err_code);
+
+        deactivate_sensor(i);
+    }
 }
 
 void init_ble()
@@ -261,11 +300,10 @@ int main(void)
     uint8_t reg; // ACCEL_XOUT_L;
     uint8_t data[SENSOR_DATA_LEN];
     struct IMU imu;
-    uint8_t sens_id = 0x55;
+    uint8_t sens_id = 0x0;
 
-    /*nrf_drv_clock_init();*/
-    /*[>APP_ERROR_CHECK(err_code);<]*/
-    /*nrf_drv_clock_lfclk_request(NULL);*/
+
+
 
     uart_config();
     init_timer();
@@ -279,8 +317,8 @@ int main(void)
     init_ble();
 
 
-
     printf("smart shirt\r\n");
+
 
     while (true)
     {
@@ -288,52 +326,60 @@ int main(void)
         for (int i = 0; i < LEDS_NUMBER; i++)
         {
             LEDS_INVERT(1 << leds_list[i]);
-            nrf_delay_ms(1);
+            nrf_delay_ms(20);
         }
-        power_manage();
-        
-        // burst read accel, gyro, temperature
-        reg = 0x3B;          
-        err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, &reg, sizeof(reg), true);
-        APP_ERROR_CHECK(err_code);
-        err_code = nrf_drv_twi_rx(&m_twi_mpu9250, MPU9250, data, 14);
-        APP_ERROR_CHECK(err_code);
 
-        // read magno
-        if (read_reg(AK8963, 0x02) & 1)
+        for (sens_id = 22; sens_id < 26; sens_id++)
         {
-            reg = 0x03;  // magno start
-            err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, &reg, sizeof(reg), true);
+
+            /*power_manage();*/
+            activate_sensor(23);
+
+            // burst read accel, gyro, temperature
+            reg = 0x3B;          
+            err_code = nrf_drv_twi_tx(&m_twi_mpu9250, MPU9250, &reg, sizeof(reg), true);
             APP_ERROR_CHECK(err_code);
-            err_code = nrf_drv_twi_rx(&m_twi_mpu9250, AK8963, data+14, 7);
+            err_code = nrf_drv_twi_rx(&m_twi_mpu9250, MPU9250, data, 14);
             APP_ERROR_CHECK(err_code);
+
+            // read magno
+            if (read_reg(AK8963, 0x02) & 1)
+            {
+                reg = 0x03;  // magno start
+                err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, &reg, sizeof(reg), true);
+                APP_ERROR_CHECK(err_code);
+                err_code = nrf_drv_twi_rx(&m_twi_mpu9250, AK8963, data+14, 7);
+                APP_ERROR_CHECK(err_code);
+            }
+            deactivate_sensor(23);
+
+            // add timestamp
+            memmove(data+14+7, &_MS_, 4);
+
+            // add sensor ID
+            memmove(data+14+7+4, &sens_id, 1);
+
+            memmove(sensor_output_buf, data, SENSOR_DATA_LEN);
+
+            /*sensor_update();*/
+
+            // put data neatly in IMU struct
+            parse_data(&imu,data);
+
+            // output
+            printf("Sensor %d:\r\n",sens_id);
+            printf("    accel:\r\n");
+            printf("        x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);
+            printf("    gyro:\r\n");
+            printf("        x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);
+            printf("    magno:\r\n");
+            printf("        x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);
+            printf("    temperature:\r\n");
+            printf("        t:%d\r\n", imu.temperature);
+            printf("    time:\r\n");
+            printf("        t:%ld\r\n", _MS_);
+            printf("\r\n");
         }
-
-        // add timestamp
-        memmove(data+14+7, &_MS_, 4);
-
-        // add sensor ID
-        memmove(data+14+7+4, &sens_id, 1);
-
-        memmove(sensor_output_buf, data, SENSOR_DATA_LEN);
-
-        sensor_update();
-
-        // put data neatly in IMU struct
-        /*parse_data(&imu,data);*/
-
-        // output
-        /*printf("accel:\r\n");*/
-        /*printf("    x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);*/
-        /*printf("gyro:\r\n");*/
-        /*printf("    x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);*/
-        /*printf("magno:\r\n");*/
-        /*printf("    x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);*/
-        /*printf("temperature:\r\n");*/
-        /*printf("    t:%d\r\n", imu.temperature);*/
-        /*printf("time:\r\n");*/
-        /*printf("    t:%ld\r\n", _MS_);*/
-        /*printf("\r\n");*/
 
     }
 }
