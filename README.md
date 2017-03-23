@@ -86,3 +86,9 @@ It will connect to the sensor MCU.  Restart sensor MCU if it hangs.
 ### Notes
 
 The `npm` installation of `bluetooth-hci-socket` didn't work for me at first.  See [this fix](http://stackoverflow.com/questions/38149603/npm-install-fails-with-error-c2373-with-vs2015-update-3/38149604#38149604) if it doesn't work.  Try the accepted answer and try just running `npm install npm -g` all in administer cmd lines.
+
+# Wiring
+
+See picture of bread board for reference.  SCA connects to MCU pin 30 and SCL connects to MCU pin 31.  Each AD0 pin needs to connect to a specific GPIO on the MCU as it acts like a chip select.  Connect each AD0 to MCU pins 22, 23, 24, 25.  By connecting a sensor to a pin, it is also assigning it an ID.  E.g. Sensor with AD0 connected to 23 will have ID 23.  Sensors can be removed or added if necessary.
+
+![](http://i.imgur.com/u7qW0R2.jpg)
