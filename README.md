@@ -83,6 +83,19 @@ node bluetooth.js
 
 It will connect to the sensor MCU.  Restart sensor MCU if it hangs.  
 
+#### Output units
+
+Default unit scale:
+* Accelerometer: +/- 2g
+* Gyroscope:     +/- 250 deg/sec 
+* Magnetometer:  0.6 uT/bit
+
+The Accelerometer and Gyroscope units are the maximum ranges for the ADC output.  Since each one is signed 16 bit data,
+you would calculate the real value as \<signed-value\>/2^15 [g].  If you find that the ranges saturate easily, then let me know
+and I can easily update it to be like +/- 4g or +/-16g, etc.
+
+The magnetometer is calculated simply as \<signed-value\> * 0.6 [uT].
+
 ### Notes
 
 The `npm` installation of `bluetooth-hci-socket` didn't work for me at first.  See [this fix](http://stackoverflow.com/questions/38149603/npm-install-fails-with-error-c2373-with-vs2015-update-3/38149604#38149604) if it doesn't work.  Try the accepted answer and try just running `npm install npm -g` all in administer cmd lines.
