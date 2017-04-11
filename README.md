@@ -89,10 +89,12 @@ Default unit scale:
 * Accelerometer: +/- 2g
 * Gyroscope:     +/- 250 deg/sec 
 * Magnetometer:  0.6 uT/bit
+* Time:          miliseconds
+* Temperature: -40 to 80 degrees C, +/-4%.
 
 The Accelerometer and Gyroscope units are the maximum ranges for the ADC output.  Since each one is signed 16 bit data,
 you would calculate the real value as \<signed-value\>/2^15 [g].  If you find that the ranges saturate easily, then let me know
-and I can easily update it to be like +/- 4g or +/-16g, etc.
+and I can easily update it to be like +/- 4g or +/-16g, etc.  Temperature is also a range.
 
 The magnetometer is calculated simply as \<signed-value\> * 0.6 [uT].
 
