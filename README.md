@@ -83,6 +83,14 @@ node bluetooth.js
 
 It will connect to the sensor MCU.  Restart sensor MCU if it hangs.  
 
+### Interfacing with the data
+
+The bluetooth.js will host a http server you can poll on port 3000.  Data is returned in json and flushed.
+
+```bash
+$ curl http://localhost:3000
+```
+
 #### Output units
 
 Default unit scale:
