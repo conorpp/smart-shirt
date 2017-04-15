@@ -1,6 +1,28 @@
 var noble = require('noble');
 
 
+var fs = require('fs');
+var log = [];
+
+const http = require('http');
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/json');
+  res.end(JSON.stringify(log));
+  log = [];
+  console.log('got http req; flushed.');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+
+
+
 noble.on('stateChange', function(state) {
   if (state === 'poweredOn') {
     noble.startScanning();
@@ -11,8 +33,6 @@ noble.on('stateChange', function(state) {
 
 var data1 = null, data2 = null;
 
-var log = [];
-var fs = require('fs');
 
 function on_sensor_data(data, is_notification)
 {
@@ -20,7 +40,7 @@ function on_sensor_data(data, is_notification)
     {
         // dont care
     }
-    //console.log('data: ', data);
+    console.log('data: ', data);
     //console.log('len: ', data.length);
     if (!data1 || !data2)
     {
@@ -64,7 +84,7 @@ function on_sensor_data(data, is_notification)
         log.push(sens_data);
         if (log.length == 3000)
         {
-            console.log('logging last 10s');
+            console.log('logging last 10s and removing last 10s');
             fs.writeFile("testvector_circles", JSON.stringify(log), function(err) {
                 if(err) {
                     return console.log(err);
@@ -77,7 +97,6 @@ function on_sensor_data(data, is_notification)
     }
 
 };
-
 
 noble.on('discover', function(peripheral) {
 
@@ -154,6 +173,10 @@ noble.on('discover', function(peripheral) {
                     {
                         console.log('error reading char',err);
                         return;
+                    }
+                    else
+                    {
+                        console.log('subscribed!');
                     }
                 });
 
