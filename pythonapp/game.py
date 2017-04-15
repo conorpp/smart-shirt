@@ -26,15 +26,18 @@ def rotation_matrix(axis, theta):
 class Cube():
     def __init__(self,):
         self.points = np.array([
-                [1, -1, -1],
-                [1, 1, -1],
-                [-1, 1, -1],
-                [-1, -1, -1],
-                [1, -1, 1],
-                [1, 1, 1],
-                [-1, -1, 1],
-                [-1, 1, 1]
+                [1., -1., -1.],
+                [1., 1., -1.],
+                [-1., 1., -1.],
+                [-1., -1., -1.],
+                [1., -1., 1.],
+                [1., 1., 1.],
+                [-1., -1., 1.],
+                [-1., 1., 1.]
                 ])
+
+        self.origin = np.array([0,0,0])
+
         self.edges = (
                 (0,1),
                 (0,3),
@@ -49,8 +52,26 @@ class Cube():
                 (5,4),
                 (5,7)
                 )
-    def rotate(self,):
-        pass
+
+    def rotate(self,axis, rads):
+
+        old_org = np.array(self.origin)
+        self.move(-self.origin)
+
+        axis = np.array(axis)
+
+        for i,val in enumerate(self.points):
+            self.points[i] = np.dot(rotation_matrix(axis,rads), val)
+
+        self.move(old_org)
+
+    def move(self,v):
+        v = np.array(v)
+        self.origin = self.origin + v
+        for i,val in enumerate(self.points):
+            self.points[i] = val + v
+
+
     def draw(self,):
         glBegin(GL_LINES)
         for edge in self.edges:
@@ -66,8 +87,11 @@ def main():
 
     gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
 
-    glTranslatef(0.0,0.0, -5)
+    glTranslatef(0.0,0.0, -8)
     cube = Cube()
+    i = 0
+    cube.move([.1,.1,.1])
+    #cube.rotate([0,0,10], 2 * 3.14/8);
 
     while True:
         for event in pygame.event.get():
@@ -75,10 +99,17 @@ def main():
                 pygame.quit()
                 quit()
 
-        #glTranslatef(0.00, 0.00, 0.00)
-        #glRotatef(-10, 0, 0, 00)
-        #glRotatef(1, 3, 1 ,1)
+
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+        # use move and rotate methods.
+        # add a cube for each sensor being used.
+        # can change cube to something else if needed.
+        cube.move([0,float(i-100)/4000,0])
+        cube.rotate([0,0,10], 0.009);
+        i = (i + 1) % 200
+
+
         cube.draw()
         pygame.display.flip()
         pygame.time.wait(10)
