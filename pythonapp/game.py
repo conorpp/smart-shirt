@@ -35,8 +35,9 @@ class Cube():
                 [-1., -1., 1.],
                 [-1., 1., 1.]
                 ])
-
+        self.points = self.points /50
         self.origin = np.array([0,0,0])
+        self.offset = np.array([0,0,0])
 
         self.edges = (
                 (0,1),
@@ -52,6 +53,8 @@ class Cube():
                 (5,4),
                 (5,7)
                 )
+    def scale(self, s):
+        self.points *= s
 
     def rotate(self,axis, rads):
 
@@ -71,6 +74,10 @@ class Cube():
         for i,val in enumerate(self.points):
             self.points[i] = val + v
 
+    def move_to(self,v):
+        self.move(-self.origin)
+        self.move(v)
+
 
     def draw(self,):
         glBegin(GL_LINES)
@@ -78,6 +85,68 @@ class Cube():
             for vertex in edge:
                 glVertex3fv(self.points[vertex])
         glEnd()
+
+class Arm():
+    def __init__(self,):
+        self.hand = Cube()
+        self.wrist    = Cube()
+        self.elbow    = Cube()
+        self.uparm    = Cube()
+        self.shoulder = Cube()
+
+        #self.shoulder.scale(.6)
+        #self.elbow.scale(.6)
+        #self.hand.scale(.6)
+
+        # 10 in == 254 mm
+        self.a = 0.254
+
+        self.shoulder.move([0,self.a,0])
+        self.uparm.move([0,self.a/2,0])
+        # elbow in center
+
+        self.wrist.move([0,-self.a/2,0])
+        self.hand.move([0,-self.a,0])
+
+    def draw(self,):
+        self.hand.draw()
+        self.wrist.draw()
+        self.uparm.draw()
+        self.elbow.draw()
+        self.shoulder.draw()
+        glBegin(GL_LINES)
+
+        glVertex3fv(self.hand.origin)
+        glVertex3fv(self.wrist.origin)
+
+        glVertex3fv(self.wrist.origin)
+        glVertex3fv(self.elbow.origin)
+
+        glVertex3fv(self.elbow.origin)
+        glVertex3fv(self.uparm.origin)
+
+        glVertex3fv(self.uparm.origin)
+        glVertex3fv(self.shoulder.origin)
+        glEnd()
+
+    def set_uparm(self,v):
+        self.uparm.move_to(self.shoulder.origin)
+        self.uparm.move(np.array(v) * (-self.a/2))
+        self.set_elbow(v)
+
+    def set_elbow(self,v):
+        self.elbow.move_to(self.shoulder.origin)
+        self.elbow.move(np.array(v) * (-self.a))
+
+    def set_wrist(self,v):
+        self.wrist.move_to(self.elbow.origin)
+        self.wrist.move(np.array(v) * (-self.a/2))
+        self.set_hand(v)
+
+    def set_hand(self,v):
+        self.hand.move_to(self.elbow.origin)
+        self.hand.move(np.array(v) * (-self.a))
+
 
 
 def main():
@@ -87,11 +156,10 @@ def main():
 
     gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
 
-    glTranslatef(0.0,0.0, -8)
-    cube = Cube()
+    glTranslatef(0.0,0.0, -1)
     i = 0
-    cube.move([.1,.1,.1])
-    #cube.rotate([0,0,10], 2 * 3.14/8);
+    arm = Arm()
+
 
     while True:
         for event in pygame.event.get():
@@ -105,12 +173,14 @@ def main():
         # use move and rotate methods.
         # add a cube for each sensor being used.
         # can change cube to something else if needed.
-        cube.move([0,float(i-100)/4000,0])
-        cube.rotate([0,0,10], 0.009);
-        i = (i + 1) % 200
+        #cube.move([0,0,float(i-100)/4000])
+        #cube.rotate([0,0,10], 0.009);
+        arm.set_uparm([math.cos(i),math.sin(i),math.cos(i)])
+        arm.set_wrist([-math.cos(i),math.sin(i),math.sin(i)])
+        arm.draw()
+        i = (i + .01)
 
 
-        cube.draw()
         pygame.display.flip()
         pygame.time.wait(10)
 
