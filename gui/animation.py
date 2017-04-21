@@ -1,13 +1,8 @@
-from __future__ import print_function
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 import numpy as np
-import json
-import time
-import requests
-
-import math
+import json, time, requests, os.path, math
 
 betterformat = []
 
@@ -15,40 +10,32 @@ def handle_close(evt):
     quit()
 
 
-class Visual(object):
-    def __init__(self, ax, period):
-        self.ax = ax
-        self.point = 0
-        self.ms = 0
-        self.period = period
-        self.xPos = 0
-        self.yPos = 0
-        self.zPos = 0
-        self.xmagoffset = 0
-        self.ymagoffset = 0
-        self.zmagoffset = -1
-        self.time = 0
-        self.lastTime = 0
+class SensorManager(object):
+    def __init__(self, ):
         
-        #Body points, line verticies [x, y, z] measurements based on self
-        # scale in cm (ideally)
-        # may have to add velocity?
-        
-        self.leftWrist = [0, -20, -15]
-        self.leftElbow  = [0, -20, 20]
-        self.leftShoulder  = [0, -20, 50]
-        self.leftKnee  = [0, -10, -38]
-        self.leftAnkle  = [0, -10, -80]
-        self.pelvis  = [0, 0, 0]
-        self.rightWrist = [0, 20, -15]
-        self.rightElbow  = [0, 20, 20]
-        self.rightShoulder = [0, 20, 50]
-        self.rightKnee  = [0, 10, -38]
-        self.rightAnkle  = [0, 10, -80]
-        
-        self.testvel = 0
-        self.testpoint = [0, 0, 0]
-        ax.auto_scale_xyz([-100, 110], [-100, 110], [-100, 110])
+        self.sensors = {'22':[], '23':[], '24':[], '25':[]}
+        self.sensor_config = {
+                '22':
+                {'offsets': {'x':0,
+                    'y':0,
+                    'z':0}},
+                '23':
+                {'offsets': {'x':0,
+                    'y':0,
+                    'z':0}},
+                '24':
+                {'offsets': {'x':0,
+                    'y':0,
+                    'z':0}},
+                '25':
+                {'offsets': {'x':0,
+                    'y':0,
+                    'z':0}},
+                }
+        self.aves = {'x':np.zeros(10), 'y':np.zeros(10),'z':np.zeros(10)}
+
+    def clear_sensors(self,):
+        self.sensors = {'22':[], '23':[], '24':[], '25':[]}
 
     def linePlot(self, point1, point2):
         self.ax.plot(
@@ -57,101 +44,130 @@ class Visual(object):
             [np.array(point1[2]), np.array(point2[2])], 
             'k')
             
-    def plotStickFigure(self):
-        self.linePlot(self.leftWrist, self.leftElbow)
-        self.linePlot(self.leftElbow, self.leftShoulder)
-        self.linePlot(self.leftShoulder, self.pelvis)
-        self.linePlot(self.pelvis, self.leftKnee)
-        self.linePlot(self.leftKnee, self.leftAnkle)
-        self.linePlot(self.rightWrist, self.rightElbow)
-        self.linePlot(self.rightElbow, self.rightShoulder)
-        self.linePlot(self.pelvis, self.rightShoulder)
-        self.linePlot(self.rightShoulder, self.leftShoulder)
-        self.linePlot(self.pelvis, self.rightKnee)
-        self.linePlot(self.rightKnee, self.rightAnkle)
-        
-    def update(self, frame):
-        if 0:
-            self.plotStickFigure()
+    def poll_sensor(self,use_offsets=True):
+        """
+            adds any available data to queue
+        """
+        req = requests.get('http://127.0.0.1:3000')
+        if req.status_code > 299:
+            print('Error accessing server: ' + req.status_code)
+            quit(-1)
+ 
+        data = json.loads(req.text)
 
-        else:
-            self.ms += self.period
-            
-            self.ax.clear()
-            
-            #req = requests.get('http://localhost:3000')
-            req = requests.get('http://127.0.0.1:3000')
-            #req = requests.get('http://192.168.2.50:3000')
-            if req.status_code > 299:
-                print('Error accessing server: ' + req.status_code)
-                quit(-1)
-            
-            self.lastTime = self.time
+        # organize by sensor ID
+        for i in data:
+            idx = str(i['id'])
+
+            if use_offsets:
+                # apply offsets
+                for j in 'xyz':
+                    i['magno'][j] -= self.sensor_config[idx]['offsets'][j]
                 
-            data = json.loads(req.text)
-            
-            if len(data) < 1:
-                return
-            
-            # get multiple readings... TODO
-            accelx = (2 * data[len(data) - 1]['accel']['x']) / (2 ** 15)
-            accely = (2 * data[len(data) - 1]['accel']['y']) / (2 ** 15)
-            accelz = (-(2 * data[len(data) - 1]['accel']['z']) / (2 ** 15)) + 1
-            gyrox = (2 * data[len(data) - 1]['gyro']['x']) / (2 ** 15)
-            gyroy = (2 * data[len(data) - 1]['gyro']['y']) / (2 ** 15)
-            gyroz = (2 * data[len(data) - 1]['gyro']['z']) / (2 ** 15)
-            magnetx = data[len(data) - 1]['magno']['x'] * 0.6
-            magnety = data[len(data) - 1]['magno']['y'] * 0.6
-            magnetz = data[len(data) - 1]['magno']['z'] * 0.6
-            self.time = data[len(data) - 1]['timestamp']
-            
-            if self.lastTime == 0: # first reading
-                normalization = math.sqrt((magnetx ** 2) + (magnety ** 2) + (magnetz ** 2))
-                #self.xmagoffset = -magnetx/normalization
-                #self.ymagoffset = -magnety/normalization
-                #self.zmagoffset = -magnetz/normalization
-                self.lastTime = self.time
-                
-            # normalize magnetometer readings
-            rsphere = 2
-            normalization = math.sqrt((magnetx ** 2) + (magnety ** 2) + (magnetz ** 2))
-            magnetx = (magnetx / normalization + self.xmagoffset) * rsphere - rsphere / 2
-            magnety = (magnety / normalization + self.ymagoffset) * rsphere - rsphere / 2
-            magnetz = (magnetz / normalization + self.zmagoffset) * rsphere - rsphere / 2
-            
-            #update position
-            #self.xPos += accelx * (((self.time - self.lastTime) / 1000) ** 2)
-            #self.yPos += accely * (((self.time - self.lastTime) / 1000) ** 2)
-            #self.zPos += accelz * (((self.time - self.lastTime) / 1000) ** 2)
-            #self.linePlot(self.pelvis, [self.xPos, self.yPos, self.zPos])
-            
-            self.linePlot(self.pelvis, [magnetx, magnety, magnetz])
-#            print(magnetx, "\t", magnety, "\t", magnetz)
-            print(magnetx ** 2 + magnety ** 2 + magnetz ** 2)
-            
-            #print(self.xPos, self.yPos, self.zPos, accelx, accely, accelz, (self.time - self.lastTime)/1000)
-            #self.linePlot(self.pelvis, [accelx, accely, accelz])    # plot line for accel data
-            #self.linePlot(self.pelvis, [gyrox, gyroy, gyroz])       # plot line for gyro data
-            #self.linePlot(self.pelvis, [magnetx, magnety, magnetz]) # plot line for magnetometer data
-            #ax.auto_scale_xyz([-25000, 25000], [-25000, 25000], [-25000, 25000])
-            bound = rsphere 
-            ax.auto_scale_xyz([-bound, bound], [-bound, bound], [-bound, bound])
-            #self.ax.clear()
+                # negate z to make sense
+                i['magno']['z'] *= -1
+
+            self.sensors[idx].append(i)
+
+    def calibrate(self,):
+
+        if os.path.isfile('calibration.json'):
+            print 'Reusing last calibration settings...'
+            print 'Delete \'calibration.json\' to not do this.'
+            self.sensor_config = json.loads(open('calibration.json','r').read())
+            time.sleep(1)
+            return
+
+        seconds = 6
+
+        print "calibration starting in 1 second."
+        print
+        time.sleep(1)
+        print "hold board parallel to ground"
+        print
+        time.sleep(1)
+        print "swing it left to right 180 degrees slowly"
+        print
+        time.sleep(1)
+        print 'collecting samples for %d seconds' % seconds
+        print
+        time.sleep(0.1)
+        for i in range(seconds * 100):
+            self.poll_sensor(False)
+            time.sleep(1.0/100)
         
-        #ax.auto_scale_xyz([-100, 110], [-100, 110], [-100, 110])
-        return ax,
+        self.set_offsets('xy')
+        
+        print 'okay now start swinging board up and down 180 degrees slowly'
+        print
+        print 'collecting samples for %d seconds' % seconds
+        print
+        time.sleep(0.1)
+
+        for i in range(seconds * 100):
+            self.poll_sensor(False)
+            time.sleep(1.0/100)
+
+        self.set_offsets('z')
+        print
+        print 'good job.  all calibrated.  Saving settings to \'calibration.json\''
+        print
+        open('calibration.json','w+').write(json.dumps(self.sensor_config))
+        time.sleep(1)
+ 
+    def set_offsets(self,axis='xyz'):
+        for i in ['22','23','24','25']:
+            for j in axis:
+                jmax = max(self.sensors[i], key=lambda x:x['magno'][j])
+                jmin = min(self.sensors[i], key=lambda x:x['magno'][j])
+
+                print '%s (%d, %d)'%( j, jmin['magno'][j] * .6, jmax['magno'][j] * .6)
+
+                offset = (jmax['magno'][j] - jmin['magno'][j])/2.0 + jmin['magno'][j]
+                self.sensor_config[i]['offsets'][j] = offset
+
+        self.clear_sensors()
+
+    def _update(self, frame):
+        
+        """ put data on back of queue """
+        self.poll_sensor()
+
+        if not len(self.sensors['22']):
+            return
+
+        """ consume 1 data packet per frame from front of queue"""
+        pkt = self.sensors['22'].pop(0)
+
+        magnetx = pkt['magno']['x']
+        magnety = pkt['magno']['y']
+        # invert z axis b/c of board
+        magnetz = pkt['magno']['z']
+
+        # this is not needed as it's all relative
+        magnetx *= 0.6
+        magnety *= 0.6
+        magnetz *= 0.6
+        
+        self.ax.clear()
+        self.linePlot([0,0,0], [magnetx, magnety, magnetz])
+        
+        rsphere = 400
+        bound = rsphere 
+        self.ax.auto_scale_xyz([-bound, bound], [-bound, bound], [-bound, bound])
+
+        print 'x: %d, y: %d, z: %d' % (magnetx, magnety, magnetz)
+
+    def test(self,):
+        period = 10
+        fig = plt.figure()
+        fig.canvas.mpl_connect('close_event', handle_close)
+        self.ax = fig.add_subplot(111, projection='3d')
+        ani = animation.FuncAnimation(fig, self._update, interval=period)
+        plt.show()
+
 
 if __name__ == "__main__":
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    fig.canvas.mpl_connect('close_event', handle_close)
-    period = 5
-    
-    v = Visual(ax, period)
-    
-    # animation updates (ideally) according to the interval in ms (this should be 100 frames per second)
-    ani = animation.FuncAnimation(fig, v.update, interval=period)
-    
-    plt.show()
-    
+    v = SensorManager()
+    v.calibrate()
+    v.test()
