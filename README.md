@@ -130,6 +130,8 @@ each time you run the program.  Simply delete `calibration.json` to recalibrate 
 We are doing the graphics manually with OpenGL.  The orange cubes represent joints and the blue cubes
 represent places inbetween the joints that the sensors are located.
 
+![](http://i.imgur.com/bubSQV7.png)
+
 Right now only one sensor is being used and that's on the upper arm location (between shoulder joint and elbow joint).
 Next we should add a sensor to the wrist (between elbow joint and hand joint).  This can be done by reading the main
 loop in visual.py and seeing lines 188,199.  Right now `arm.set_uparm` and `arm.set_wrist` sets the normalized XYZ point
