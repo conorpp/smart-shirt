@@ -41,3 +41,5 @@
 *.swp
 
 node_modules
+*.pyc
+calibration.json

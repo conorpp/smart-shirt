@@ -4,6 +4,14 @@ import matplotlib.animation as animation
 import numpy as np
 import json, time, requests, os.path, math
 
+import pygame
+from pygame.locals import *
+
+from OpenGL.GL import *
+from OpenGL.GLU import *
+
+
+
 betterformat = []
 
 def handle_close(evt):
@@ -36,6 +44,9 @@ class SensorManager(object):
 
     def clear_sensors(self,):
         self.sensors = {'22':[], '23':[], '24':[], '25':[]}
+
+    def has_data(self,idx):
+        return len(self.sensors[idx]) != 0
 
     def linePlot(self, point1, point2):
         self.ax.plot(
@@ -128,42 +139,58 @@ class SensorManager(object):
 
         self.clear_sensors()
 
-    def _update(self, frame):
-        
-        """ put data on back of queue """
-        self.poll_sensor()
+    def get_point(self, idx):
+        """ consume a point from a given sensor ID """
 
-        if not len(self.sensors['22']):
-            return
 
-        """ consume 1 data packet per frame from front of queue"""
+        if not len(self.sensors[idx]):
+            return [None, None, None]
+
+
         pkt = self.sensors['22'].pop(0)
-
         magnetx = pkt['magno']['x']
         magnety = pkt['magno']['y']
         # invert z axis b/c of board
         magnetz = pkt['magno']['z']
 
-        # this is not needed as it's all relative
-        magnetx *= 0.6
-        magnety *= 0.6
-        magnetz *= 0.6
+        return [magnetx * 0.6,magnety * 0.6,magnetz * 0.6]
+
+    def get_point_normal(self, idx):
+        """ consume a point from a given sensor ID, normalized """
         
+        a = self.get_point(idx)
+        if None in a: return a
+
+        m = math.sqrt(a[0] ** 2 + a[1] ** 2 + a[2] ** 2)
+
+        return [a[0]/m, a[1]/m, a[2]/m]
+
+    def _update(self, frame):
+        
+        """ put data on back of queue """
+        self.poll_sensor()
+
+        """ consume 1 data packet per frame from front of queue"""
+        point = self.get_point_normal('22')
+
+        if None in point: return
+
         self.ax.clear()
-        self.linePlot([0,0,0], [magnetx, magnety, magnetz])
+        self.linePlot([0,0,0], point)
         
-        rsphere = 400
+        rsphere = 2
         bound = rsphere 
         self.ax.auto_scale_xyz([-bound, bound], [-bound, bound], [-bound, bound])
 
-        print 'x: %d, y: %d, z: %d' % (magnetx, magnety, magnetz)
+        print 'x: %.02f, y: %.02f, z: %.02f' % (point[0], point[1], point[2])
 
     def test(self,):
-        period = 10
+        period = 5
         fig = plt.figure()
         fig.canvas.mpl_connect('close_event', handle_close)
         self.ax = fig.add_subplot(111, projection='3d')
         ani = animation.FuncAnimation(fig, self._update, interval=period)
+        self.clear_sensors()
         plt.show()
 
 
@@ -171,3 +198,4 @@ if __name__ == "__main__":
     v = SensorManager()
     v.calibrate()
     v.test()
+
