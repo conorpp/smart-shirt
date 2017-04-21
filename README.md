@@ -110,8 +110,42 @@ The magnetometer is calculated simply as` <signed-value> * 0.6 [uT]`.
 
 The `npm` installation of `bluetooth-hci-socket` didn't work for me at first.  See [this fix](http://stackoverflow.com/questions/38149603/npm-install-fails-with-error-c2373-with-vs2015-update-3/38149604#38149604) if it doesn't work.  Try the accepted answer and try just running `npm install npm -g` all in administer cmd lines.
 
+# Usage
+
+## Calibration
+
+You need to calibrate the magnetometer for it to work properly.  Simply run the program and follow directions.
+```bash
+python visual.py   # or sensor.py
+```
+
+All calibration is done python side for convenience.  Firmware/bluetooth just dumps the raw values.  See output units section.
+
+You will have to move the board from left to right 180 degrees and then the same moving it up and down.
+The program will save the configuration to a file called `calibration.json` so you don't need to do this
+each time you run the program.  Simply delete `calibration.json` to recalibrate next time  you run the program.
+
+## Visualization
+
+We are doing the graphics manually with OpenGL.  The orange cubes represent joints and the blue cubes
+represent places inbetween the joints that the sensors are located.
+
+Right now only one sensor is being used and that's on the upper arm location (between shoulder joint and elbow joint).
+Next we should add a sensor to the wrist (between elbow joint and hand joint).  This can be done by reading the main
+loop in visual.py and seeing lines 188,199.  Right now `arm.set_uparm` and `arm.set_wrist` sets the normalized XYZ point
+on the imaginary unit sphere around the sholder and elbow joints, respectively.  `arm.set_wrist` needs real data input
+and not fake data.  Next, more joints and sensors should be added.
+
+### Sensor IDs
+
+The sensor IDs are 22, 23, 24, 25.  They correspond to the "chip select" GPIO they are each plugged into.
+See wiring section.
+
+
 # Wiring
 
 See picture of bread board for reference.  SCA connects to MCU pin 30 and SCL connects to MCU pin 31.  Each AD0 pin needs to connect to a specific GPIO on the MCU as it acts like a chip select.  Connect each AD0 to MCU pins 22, 23, 24, 25.  By connecting a sensor to a pin, it is also assigning it an ID.  E.g. Sensor with AD0 connected to 23 will have ID 23.  Sensors can be removed or added if necessary.
 
 ![](http://i.imgur.com/u7qW0R2.jpg)
+
+
