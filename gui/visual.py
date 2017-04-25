@@ -41,6 +41,7 @@ class Cube():
         self.origin = np.array([0,0,0])
         self.offset = np.array([0,0,0])
 
+
         self.edges = (
                 (0,1),
                 (0,3),
@@ -177,9 +178,12 @@ def visualize(sens):
                 quit()
 
         if not sens.has_data('22'): sens.poll_sensor()
-        xyz = sens.get_point_normal('22')
+
+        xyz = sens.get_point('22')
+        xyz = sens.lowpass(xyz, 15)
+        xyz = sens.get_point_normal(xyz)
         
-        pygame.time.wait(15)
+        pygame.time.wait(2)
 
         if None in xyz: continue
 
