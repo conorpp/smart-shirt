@@ -242,9 +242,9 @@ void init_imu()
         APP_ERROR_CHECK(err_code);
 
 
-        // put magnometer in continuous mode
+        // put magnometer in 16 bit continuous mode 2
         mode_data[0] = 0x0a;
-        mode_data[1] = 0x12;
+        mode_data[1] = 0x16;
         err_code = nrf_drv_twi_tx(&m_twi_mpu9250, AK8963, mode_data, 2, false);
         APP_ERROR_CHECK(err_code);
 
@@ -298,7 +298,7 @@ int main(void)
 
     ret_code_t err_code;
     uint8_t reg; // ACCEL_XOUT_L;
-    uint8_t data[SENSOR_DATA_LEN];
+    uint8_t data[SENSOR_DATA_LEN * 4];
     struct IMU imu;
     uint8_t sens_id = 0x0;
 
@@ -323,17 +323,17 @@ int main(void)
     while (true)
     {
         // Toggle LEDs.
-        for (int i = 0; i < LEDS_NUMBER; i++)
+        for (int i = 0; i < 4; i++)
         {
             LEDS_INVERT(1 << leds_list[i]);
-            nrf_delay_ms(20);
+            nrf_delay_ms(2);
         }
 
         for (sens_id = 22; sens_id < 26; sens_id++)
         {
 
             /*power_manage();*/
-            activate_sensor(23);
+            activate_sensor(sens_id);
 
             // burst read accel, gyro, temperature
             reg = 0x3B;          
@@ -351,34 +351,44 @@ int main(void)
                 err_code = nrf_drv_twi_rx(&m_twi_mpu9250, AK8963, data+14, 7);
                 APP_ERROR_CHECK(err_code);
             }
-            deactivate_sensor(23);
+            else
+            {
+                continue;
+            }
+            deactivate_sensor(sens_id);
 
             // add timestamp
-            memmove(data+14+7, &_MS_, 4);
+            /*memmove(data+14+7, &_MS_, 4);*/
 
-            // add sensor ID
-            memmove(data+14+7+4, &sens_id, 1);
+            /*// add sensor ID*/
+            /*memmove(data+14+7+4, &sens_id, 1);*/
 
-            memmove(sensor_output_buf, data, SENSOR_DATA_LEN);
+            /*memmove(sensor_output_buf, data, SENSOR_DATA_LEN);*/
 
-            /*sensor_update();*/
+
+            // only using the magnetometer and timestamp now
+            memmove(sensor_output_buf, data + 14, 6); 
+            memmove(sensor_output_buf+ 6, &_MS_, 4);
+            memmove(sensor_output_buf+10, &sens_id, 1);
+
+            sensor_update();
 
             // put data neatly in IMU struct
             parse_data(&imu,data);
 
             // output
-            printf("Sensor %d:\r\n",sens_id);
-            printf("    accel:\r\n");
-            printf("        x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);
-            printf("    gyro:\r\n");
-            printf("        x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);
-            printf("    magno:\r\n");
-            printf("        x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);
-            printf("    temperature:\r\n");
-            printf("        t:%d\r\n", imu.temperature);
-            printf("    time:\r\n");
-            printf("        t:%ld\r\n", _MS_);
-            printf("\r\n");
+            /*printf("Sensor %d:\r\n",sens_id);*/
+            /*printf("    accel:\r\n");*/
+            /*printf("        x:%d y:%d z:%d\r\n", imu.accel.x, imu.accel.y, imu.accel.z);*/
+            /*printf("    gyro:\r\n");*/
+            /*printf("        x:%d y:%d z:%d\r\n", imu.gyro.x, imu.gyro.y, imu.gyro.z);*/
+            /*printf("    magno:\r\n");*/
+            /*printf("        x:%d y:%d z:%d\r\n", imu.magno.x, imu.magno.y, imu.magno.z);*/
+            /*printf("    temperature:\r\n");*/
+            /*printf("        t:%d\r\n", imu.temperature);*/
+            /*printf("    time:\r\n");*/
+            /*printf("        t:%ld\r\n", _MS_);*/
+            /*printf("\r\n");*/
         }
 
     }

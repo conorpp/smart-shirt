@@ -42,42 +42,43 @@ function on_sensor_data(data, is_notification)
     }
     console.log('data: ', data);
     //console.log('len: ', data.length);
-    if (!data1 || !data2)
-    {
-        if (data.length == 20)
-        {
-            data1 = data;
-        }
-        else
-        {
-            data2 = data;
-        }
-    }
-    else
-    {
-        buf = Buffer.concat([data1, data2], data1.length + data2.length);
-        data1 = null;
-        data2 = null;
+    //if (!data1 || !data2)
+    //{
+        //if (data.length == 20)
+        //{
+            //data1 = data;
+        //}
+        //else
+        //{
+            //data2 = data;
+        //}
+    //}
+    //else
+    //{
+        //buf = Buffer.concat([data1, data2], data1.length + data2.length);
+        //data1 = null;
+        //data2 = null;
+        buf = data;
 
         var sens_data = {
-            accel: {
-                x: buf.readInt16BE(0),
-                y: buf.readInt16BE(2),
-                z: buf.readInt16BE(4)
-            },
-            gyro: {
-                x: buf.readInt16BE(8),
-                y: buf.readInt16BE(10),
-                z: buf.readInt16BE(12)
-            },
+            //accel: {
+                //x: buf.readInt16BE(0),
+                //y: buf.readInt16BE(2),
+                //z: buf.readInt16BE(4)
+            //},
+            //gyro: {
+                //x: buf.readInt16BE(8),
+                //y: buf.readInt16BE(10),
+                //z: buf.readInt16BE(12)
+            //},
             magno: {
-                x: buf.readInt16LE(14),
-                y: buf.readInt16LE(16),
-                z: buf.readInt16LE(18)
+                x: buf.readInt16LE(0),
+                y: buf.readInt16LE(2),
+                z: buf.readInt16LE(4)
             },
-            temperature: buf.readInt16BE(6),
-            timestamp: buf.readInt32LE(21),
-            id: buf.readUInt8(25)
+            //temperature: buf.readInt16BE(6),
+            timestamp: buf.readInt32LE(6),
+            id: buf.readUInt8(10)
 
         };
         console.log(sens_data);
@@ -94,7 +95,7 @@ function on_sensor_data(data, is_notification)
                 log = [];
             }); 
         }
-    }
+    //}
 
 };
 

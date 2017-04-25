@@ -2,7 +2,7 @@ PROJECT_NAME := wearable_pca10040
 
 
 # Change these if needed
-GNU_INSTALL_ROOT := C:\Program Files (x86)\GNU Tools ARM Embedded\5.4 2016q3
+GNU_INSTALL_ROOT := /home/pp/gcc-arm-none-eabi-5_4-2016q3
 GNU_VERSION := 5.4.1
 GNU_PREFIX := arm-none-eabi
 SDK_ROOT=../nrf_sdk

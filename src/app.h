@@ -23,7 +23,7 @@ typedef struct
 #define BLE_UUID_OUR_SERVICE    0xCAFE // Just a random, but recognizable value
 #define BLE_UUID_OUR_CHAR       0xBABE // Just a random, but recognizable value
 
-#define SENSOR_DATA_LEN     26
+#define SENSOR_DATA_LEN     11
 
 // conor
 extern uint8_t sensor_output_buf[SENSOR_DATA_LEN];

@@ -453,6 +453,7 @@ static void ble_sens_on_ble_evt(ble_sens_t * sens, ble_evt_t * ble_evt)
     }
 }
 
+
 void sensor_update()
 {
     ble_gatts_hvx_params_t hvx_params;
@@ -460,12 +461,7 @@ void sensor_update()
 
     if (sens->conn_handle != BLE_CONN_HANDLE_INVALID)
     {
-        // split into 20 byte chunks because that is max packet length
-        int i;
-        for (i = 0; i < SENSOR_DATA_LEN; i += 20)
-        {
-            uint16_t len = SENSOR_DATA_LEN - i;
-            if (len > 20) len = 20;
+            uint16_t len = SENSOR_DATA_LEN ;
 
             tx_done_flag = 0;
             memset(&hvx_params, 0, sizeof(hvx_params));
@@ -474,38 +470,68 @@ void sensor_update()
             hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
             hvx_params.offset = 0;
             hvx_params.p_len  = &len;
-            hvx_params.p_data = sensor_output_buf + i;
+            hvx_params.p_data = sensor_output_buf;
 
-            /*int err;*/
-            /*do*/
-            /*{*/
-                /*if (err != NRF_SUCCESS)*/
-                /*{*/
-                    /*APP_ERROR_HANDLER(err);*/
-                /*}*/
-            /*printf("len:%d\r\n",len);*/
-            while (1)
-            {
-                sd_ble_gatts_hvx(sens->conn_handle, &hvx_params);
-                /*if (err == 0x3004  //  supposed to be BLE_ERROR_NO_TX_BUFFERS*/
-                    /*)*/
-                /*{*/
-                    /*printf("returned caught error\r\n");*/
-                    /*while (tx_done_flag == 0)*/
-                    /*{*/
-                    /*}*/
-                /*}*/
-                /*else*/
-                {
-                    /*if (err != NRF_SUCCESS) printf("erro, app returned 0x%02x\r\n", err);*/
-                    /*APP_ERROR_CHECK(err);*/
-                    break;
-                }
+            sd_ble_gatts_hvx(sens->conn_handle, &hvx_params);
 
-            }
-        }
     }
 }
+
+
+
+/*void sensor_update()*/
+/*{*/
+    /*ble_gatts_hvx_params_t hvx_params;*/
+    /*ble_sens_t * sens = &m_sens_serv;*/
+
+    /*if (sens->conn_handle != BLE_CONN_HANDLE_INVALID)*/
+    /*{*/
+        /*// split into 20 byte chunks because that is max packet length*/
+        /*int i;*/
+        /*for (i = 0; i < SENSOR_DATA_LEN; i += 20)*/
+        /*{*/
+            /*uint16_t len = SENSOR_DATA_LEN - i;*/
+            /*if (len > 20) len = 20;*/
+
+            /*tx_done_flag = 0;*/
+            /*memset(&hvx_params, 0, sizeof(hvx_params));*/
+
+            /*hvx_params.handle = sens->char_handle.value_handle;*/
+            /*hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;*/
+            /*hvx_params.offset = 0;*/
+            /*hvx_params.p_len  = &len;*/
+            /*hvx_params.p_data = sensor_output_buf + i;*/
+
+            /*[>int err;<]*/
+            /*[>do<]*/
+            /*[>{<]*/
+                /*[>if (err != NRF_SUCCESS)<]*/
+                /*[>{<]*/
+                    /*[>APP_ERROR_HANDLER(err);<]*/
+                /*[>}<]*/
+            /*[>printf("len:%d\r\n",len);<]*/
+            /*while (1)*/
+            /*{*/
+                /*sd_ble_gatts_hvx(sens->conn_handle, &hvx_params);*/
+                /*[>if (err == 0x3004  //  supposed to be BLE_ERROR_NO_TX_BUFFERS<]*/
+                    /*[>)<]*/
+                /*[>{<]*/
+                    /*[>printf("returned caught error\r\n");<]*/
+                    /*[>while (tx_done_flag == 0)<]*/
+                    /*[>{<]*/
+                    /*[>}<]*/
+                /*[>}<]*/
+                /*[>else<]*/
+                /*{*/
+                    /*[>if (err != NRF_SUCCESS) printf("erro, app returned 0x%02x\r\n", err);<]*/
+                    /*[>APP_ERROR_CHECK(err);<]*/
+                    /*break;*/
+                /*}*/
+
+            /*}*/
+        /*}*/
+    /*}*/
+/*}*/
 
 
 /**@brief Function for dispatching a BLE stack event to all modules with a BLE stack event handler.
