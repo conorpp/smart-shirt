@@ -41,7 +41,12 @@ class SensorManager(object):
                     'z':0}},
                 }
         self.aves = {'x':np.zeros(10), 'y':np.zeros(10),'z':np.zeros(10)}
-        self.last_100_points = np.zeros((100,3))
+        self.last_100_points = {
+                '22':np.zeros((100,3)),
+                '23':np.zeros((100,3)),
+                '24':np.zeros((100,3)),
+                '25':np.zeros((100,3))
+                }
 
     def clear_sensors(self,):
         self.sensors = {'22':[], '23':[], '24':[], '25':[]}
@@ -150,7 +155,7 @@ class SensorManager(object):
             return [None, None, None]
 
 
-        pkt = self.sensors['22'].pop(0)
+        pkt = self.sensors[idx].pop(0)
         magnetx = pkt['magno']['x']
         magnety = pkt['magno']['y']
         # invert z axis b/c of board
@@ -159,16 +164,16 @@ class SensorManager(object):
         p = [magnetx * 0.6,magnety * 0.6,magnetz * 0.6]
 
         # for low pass later on
-        self.last_100_points = np.roll(self.last_100_points,1, axis=0)
-        self.last_100_points[0] = p
+        self.last_100_points[idx] = np.roll(self.last_100_points[idx],1, axis=0)
+        self.last_100_points[idx][0] = p
 
         return p
 
-    def lowpass(self, p, num):
+    def lowpass(self, idx, p, num):
         """ num is the number of past points to average with """
 
         if None in p: return p
-        ave = self.last_100_points[:num].sum(axis=0)
+        ave = self.last_100_points[idx][:num].sum(axis=0)
         ave = ave + p
         ave = ave / (float(num+1))
         return ave

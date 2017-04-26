@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import numpy.linalg as la
 import math
 from pygame.locals import *
 
@@ -26,7 +27,7 @@ def rotation_matrix(axis, theta):
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]]) 
 
 class Cube():
-    def __init__(self,):
+    def __init__(self,start_pos=[0,0,0]):
         self.points = np.array([
                 [1., -1., -1.],
                 [1., 1., -1.],
@@ -38,8 +39,8 @@ class Cube():
                 [-1., 1., 1.]
                 ])
         self.points = self.points /50
+        self.points_copy = np.copy(self.points)
         self.origin = np.array([0,0,0])
-        self.offset = np.array([0,0,0])
 
 
         self.edges = (
@@ -56,8 +57,15 @@ class Cube():
                 (5,4),
                 (5,7)
                 )
+        self.start = np.array(start_pos)
+        self.move(self.start)
+
     def scale(self, s):
         self.points *= s
+
+    def reset(self,):
+        self.points = np.copy(self.points_copy)
+        self.origin = np.array([0,0,0])
 
     def rotate(self,axis, rads):
 
@@ -91,25 +99,30 @@ class Cube():
 
 class Arm():
     def __init__(self,):
-        self.hand = Cube()
-        self.wrist    = Cube()
-        self.elbow    = Cube()
-        self.uparm    = Cube()
-        self.shoulder = Cube()
-
-        #self.shoulder.scale(.6)
-        #self.elbow.scale(.6)
-        #self.hand.scale(.6)
 
         # 10 in == 254 mm
         self.a = 0.254
 
-        self.shoulder.move([0,self.a,0])
-        self.uparm.move([0,self.a/2,0])
-        # elbow in center
+        self.hand = Cube([0,-self.a,0])
+        self.wrist    = Cube([0,-self.a/2,0])
+        self.elbow    = Cube([0,self.a/20,0])
+        self.uparm    = Cube([0,self.a/2,0])
+        self.shoulder = Cube([0,self.a,0])
 
-        self.wrist.move([0,-self.a/2,0])
-        self.hand.move([0,-self.a,0])
+    def angle3d(self, v1, v2):
+        """ calculate angle radians between 2 normalized 3d vectors """
+        cosang = np.dot(v1, v2)
+        sinang = la.norm(np.cross(v1, v2))
+        return np.arctan2(sinang, cosang)
+
+    def rotate_part(self, part, v):
+        """ rotate a part so it still aligns with it's starting position for a vector it moved about """
+        n = part.start / abs(part.start).max()
+        v = np.array(v)
+        angle = self.angle3d(v, n)
+        axis = -np.cross(v, n)
+        part.rotate(axis, angle)
+
 
     def draw(self,):
         glColor3f(0.9,0.5,0.2) # orange
@@ -140,22 +153,34 @@ class Arm():
         glEnd()
 
     def set_uparm(self,v):
-        self.uparm.move_to(self.shoulder.origin)
+        
+        self.uparm.reset()
+        self.uparm.move(self.shoulder.origin)
         self.uparm.move(np.array(v) * (-self.a/2))
+        self.rotate_part(self.uparm, v)
+
         self.set_elbow(v)
 
     def set_elbow(self,v):
-        self.elbow.move_to(self.shoulder.origin)
+        self.elbow.reset()
+        self.elbow.move(self.shoulder.origin)
         self.elbow.move(np.array(v) * (-self.a))
+        self.rotate_part(self.elbow, v)
 
     def set_wrist(self,v):
-        self.wrist.move_to(self.elbow.origin)
+        self.wrist.reset()
+        self.wrist.move(self.elbow.origin)
         self.wrist.move(np.array(v) * (-self.a/2))
+        
+        self.rotate_part(self.wrist, v)
+        
         self.set_hand(v)
 
     def set_hand(self,v):
-        self.hand.move_to(self.elbow.origin)
+        self.hand.reset()
+        self.hand.move(self.elbow.origin)
         self.hand.move(np.array(v) * (-self.a))
+        self.rotate_part(self.hand, v)
 
 
 
@@ -169,6 +194,9 @@ def visualize(sens):
     glTranslatef(-0.25,0.25, -2)
     i = 0
     arm = Arm()
+    pygame.display.flip()
+
+    sens.clear_sensors()
 
 
     while True:
@@ -177,31 +205,36 @@ def visualize(sens):
                 pygame.quit()
                 quit()
 
-        if not sens.has_data('22'): sens.poll_sensor()
+        if not sens.has_data('22') or not sens.has_data('23'):
+            sens.poll_sensor()
 
         xyz = sens.get_point('22')
-        xyz = sens.lowpass(xyz, 15)
-        xyz = sens.get_point_normal(xyz)
+        if None not in xyz:
+            xyz = sens.lowpass('22', xyz, 15)
+            xyz = sens.get_point_normal(xyz)
+            arm.set_uparm(xyz)
+
+        xyz = sens.get_point('23')
+        if None not in xyz:
+            xyz = sens.lowpass('23', xyz, 15)
+            xyz = sens.get_point_normal(xyz)
+            arm.set_wrist(xyz)
         
-        pygame.time.wait(2)
-
-        if None in xyz: continue
-
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
-        arm.set_uparm(xyz)
-        arm.set_wrist([math.cos(i),math.sin(i),math.cos(i)])
+
         arm.draw()
 
-        i = (i + .01)
-        
         # updates the display
         pygame.display.flip()
+        pygame.time.wait(2)
 
 
 if __name__ == "__main__":
     s = SensorManager()
     s.calibrate()
+    s.poll_sensor()
+    s.clear_sensors()
 
     visualize(s)
 
