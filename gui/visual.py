@@ -193,7 +193,8 @@ def visualize(sens):
 
     glTranslatef(-0.25,0.25, -2)
     i = 0
-    arm = Arm()
+    leftArm = Arm()
+    rightArm = Arm()
     pygame.display.flip()
 
     sens.clear_sensors()
@@ -205,25 +206,39 @@ def visualize(sens):
                 pygame.quit()
                 quit()
 
-        if not sens.has_data('22') or not sens.has_data('23'):
+        if not sens.has_data('22') or not sens.has_data('23') or not sens.has_data('24') or not sens.has_data('25'):
             sens.poll_sensor()
-
-        xyz = sens.get_point('22')
-        if None not in xyz:
-            xyz = sens.lowpass('22', xyz, 15)
-            xyz = sens.get_point_normal(xyz)
-            arm.set_uparm(xyz)
 
         xyz = sens.get_point('23')
         if None not in xyz:
             xyz = sens.lowpass('23', xyz, 15)
             xyz = sens.get_point_normal(xyz)
-            arm.set_wrist(xyz)
-        
+            leftArm.set_uparm(xyz)
+
+        xyz = sens.get_point('22')
+        if None not in xyz:
+            xyz = sens.lowpass('22', xyz, 15)
+            xyz = sens.get_point_normal(xyz)
+            leftArm.set_wrist(xyz)
+
+        xyz = sens.get_point('24')
+        if None not in xyz:
+            xyz = sens.lowpass('24', xyz, 15)
+            xyz = sens.get_point_normal(xyz)
+            rightArm.set_uparm(xyz)
+
+        xyz = sens.get_point('25')
+        if None not in xyz:
+            xyz = sens.lowpass('25', xyz, 15)
+            xyz = sens.get_point_normal(xyz)
+            rightArm.set_wrist(xyz)
+       
+ 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
 
-        arm.draw()
+        leftArm.draw()
+        rightArm.draw()
 
         # updates the display
         pygame.display.flip()

@@ -76,6 +76,15 @@ class SensorManager(object):
         for i in data:
             idx = str(i['id'])
 
+#left arm
+            if idx == '22':#wrist
+                i['magno']['x'] *= -1
+                i['magno']['y'] *= -1
+
+            if idx == '23':
+                i['magno']['x'] *= -1
+                i['magno']['y'] *= -1
+
             if use_offsets:
                 # apply offsets
                 for j in 'xyz':
@@ -83,6 +92,7 @@ class SensorManager(object):
                 
                 # negate z to make sense
                 i['magno']['z'] *= -1
+
 
             self.sensors[idx].append(i)
 
